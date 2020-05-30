@@ -24,7 +24,20 @@ If everything is done correctly, we can install the module for the current user 
 Install-package build-utils -Confirm:$false -Force -Scope CurrentUser -Verbose
 ```
 
-Once the package is installed successfully, you should be use
+Once the package is installed successfully, you can import it and verify all the functions that are available for usage
+
+```Powershell
+PS C:\somedir> Import-Module build-utils
+PS C:\somedir> Get-Command -module build-utils
+
+CommandType     Name                                               Version    Source
+-----------     ----                                               -------    ------
+Function        Edit-XmlNodes                                      0.1.2      build-utils
+Function        Get-7ZipLocation                                   0.1.2      build-utils
+Function        Update-SourceVersion                               0.1.2      build-utils
+```
+
+You should be able now to simply use and manage those functions.
 
 ## How to publish manually
 
