@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>build-utils</id>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
     <authors>Ricci Gian Maria</authors>
     <owners>Ricci Gian Maria</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>

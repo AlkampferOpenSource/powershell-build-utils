@@ -10,7 +10,7 @@ First step is register the feed where the package is published, as an example he
 Register-PSRepository -Name MyGet -SourceLocation https://www.myget.org/F/alkampfer/api/v2
 ```
 
-### I've published this package on standard PowerShell Gallery
+### How to consume package from a repository (public or private)
 
 You should be able to find this module with the following command
 
