@@ -111,6 +111,66 @@ function Expand-WithFramework(
     }
     [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $destinationFolder)
 }
+<#
+.SYNOPSIS
+Execute GitVersion using dotnet core version of the tool
+
+.DESCRIPTION
+This command requires that gitversion tool was already configured in 
+.config folder of the project in standard dotnet-tools.json file. A simple
+content could be
+
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "gitversion.tool": {
+      "version": "5.2.4",
+      "commands": [
+        "dotnet-gitversion"
+      ]
+    }
+  }
+}
+
+.EXAMPLE
+
+$version = Invoke-GitVersion
+
+Write-Host "Assembly version is $($version.assemblyVer)"
+Write-Host "File version is $($version.assemblyFileVer)"
+Write-Host "Nuget version is $($version.nugetVersion)"
+Write-Host "Informational version is $($version.assemblyInformationalVersion)"
+#>
+function Invoke-Gitversion
+{
+    Param 
+    (
+        
+    )
+
+    [hashtable]$return = @{}
+
+    Write-Host "restoring tooling for gitversion"
+    dotnet tool restore
+
+    Write-Host "Running gitversion to determine version"
+    $version = dotnet tool run dotnet-gitversion /config GitVersion.yml | Out-String | ConvertFrom-Json
+    Write-Output $version
+
+    $return.assemblyVersion = $version.AssemblySemVer
+    $return.assemblyFileVersion = $version.AssemblySemFileVer
+    $return.nugetVersion = $version.NuGetVersionV2
+    $return.assemblyInformationalVersion = $version.FullSemVer + "." + $version.Sha
+    $return.fullSemver = $version.FullSemVer
+
+    Write-Host "Assembly version is $($return.assemblyVersion)"
+    Write-Host "File version is $($return.assemblyFileVersion)"
+    Write-Host "Nuget version is $($return.nugetVersion)"
+    Write-Host "Informational version is $($return.assemblyInformationalVersion)"
+
+    return $return
+}
 
 <#
 .SYNOPSIS
@@ -124,6 +184,8 @@ can scan all files and perform a substitution.
 This should be done before compiling (and usually after version is 
 determined with tools like gitversion)
 
+This is a perfect match for Invoke-Getversion function
+
 .PARAMETER SrcPath
 Source path
 
@@ -135,6 +197,11 @@ FileAssemblyVersionAttribute
 
 .PARAMETER assemblyInformationalVersion
 AssemblyinformationalVersion
+
+.EXAMPLE
+
+$version = Invoke-GitVersion
+Update-SourceVersion -SrcPath PathWithSource -assemblyVersion $version.assemblyVersion -fileAssemblyVersion $version.assemblyFileVersion -assemblyInformationalVersion = $version.assemblyInformationalVersion
 
 #>
 function Update-SourceVersion

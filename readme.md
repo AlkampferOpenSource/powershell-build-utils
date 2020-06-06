@@ -2,20 +2,24 @@
 
 ## How to consume feed repository
 
-First step is register the feed where the package is published, here is my public MyGet feed location. **Be sure to use v2 version of feed, because at the time of this readme PowerShell works with v2 nuget package version**
+### If you want to publish packages in private repository
+
+First step is register the feed where the package is published, as an example here is my public MyGet feed location. **Be sure to use v2 version of feed, because at the time of this readme PowerShell works with v2 nuget package version**
 
 ```Powershell
 Register-PSRepository -Name MyGet -SourceLocation https://www.myget.org/F/alkampfer/api/v2
 ```
 
-Now you can list all modules, you should be able to find this module.
+### I've published this package on standard PowerShell Gallery
+
+You should be able to find this module with the following command
 
 ```Powershell
 PS C:\somedir> Find-Module -Name build-utils
 
 Version    Name                                Repository           Description
 -------    ----                                ----------           -----------
-0.1.1      build-utils                         MyGet                Simple utilities to simplify build of .NET project
+0.x.x      build-utils                         PSGallery            Simple utilities to simplify build of .NET project
 ```
 
 If everything is done correctly, we can install the module for the current user with this command (this will not require administrative permissions and install module for current user only)
@@ -39,7 +43,7 @@ Function        Update-SourceVersion                               0.1.2      bu
 
 You should be able now to simply use and manage those functions.
 
-## How to publish manually
+## How to publish manually (if you want to add it to private gallery)
 
 After you aligned version in .nuspec and .psd1 file, just run nuget to create package file. You can
 run following command in the src directory.
