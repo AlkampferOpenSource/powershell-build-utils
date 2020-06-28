@@ -1,3 +1,5 @@
+Write-Host "build utils installed"
+
 <#
 .SYNOPSIS
 Simply allow for easy XML node manipulation in context of classic .NET xml configuration
@@ -254,7 +256,8 @@ function Update-SourceVersion
             %{$_ -replace 'AssemblyInformationalVersion\(".*"\)', "AssemblyInformationalVersion(""$assemblyInformationalVersion"")" } |
             Set-Content -Encoding UTF8 -Path $file.FullName -Force
         }
-
     }
 }
+
+Export-ModuleMember -Function * -Cmdlet *
   

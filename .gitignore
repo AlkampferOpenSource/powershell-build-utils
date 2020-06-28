@@ -10,3 +10,4 @@
 
 # various other files
 *.nupkg
+nuget.exe
