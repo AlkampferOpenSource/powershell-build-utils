@@ -157,9 +157,12 @@ function Invoke-Gitversion
     dotnet tool restore
 
     Write-Host "Running gitversion to determine version"
-    $version = dotnet tool run dotnet-gitversion /config GitVersion.yml | Out-String | ConvertFrom-Json
-    Write-Output $version
+    $gitVersionOutput = dotnet tool run dotnet-gitversion /config GitVersion.yml | Out-String
+    $version = $gitVersionOutput | Out-String | ConvertFrom-Json
+    Write-Host "Raw GitVersion output"
+    Write-Host $gitVersionOutput
 
+    Write-Host "Parsed value to be returned"
     $return.assemblyVersion = $version.AssemblySemVer
     $return.assemblyFileVersion = $version.AssemblySemFileVer
     $return.nugetVersion = $version.NuGetVersionV2
@@ -170,6 +173,7 @@ function Invoke-Gitversion
     Write-Host "File version is $($return.assemblyFileVersion)"
     Write-Host "Nuget version is $($return.nugetVersion)"
     Write-Host "Informational version is $($return.assemblyInformationalVersion)"
+    Write-Host "FullSemVer version is $($return.fullSemver)"
 
     return $return
 }

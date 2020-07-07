@@ -10,19 +10,19 @@ Please follow the instruction you find at [official GitHub repository](https://g
 # Register local provider
 Register-PSRepository
     -Name Demo_build_utils
-    -SourceLocation  C:\develop\GitHub\powershell-build-utils\src\build-utils
-    -PublishLocation  C:\develop\GitHub\powershell-build-utils\src\build-utils
+    -SourceLocation  C:\develop\GitHub\powershell-build-utils\src\BuildUtils
+    -PublishLocation  C:\develop\GitHub\powershell-build-utils\src\BuildUtils
     -InstallationPolicy Trusted
 
 # Publish module in local repository
 Publish-Module 
-    -Path C:\develop\GitHub\powershell-build-utils\src\build-utils
+    -Path C:\develop\github\powershell-build-utils\src\BuildUtils
     -Repository Demo_build_utils 
     -NuGetApiKey your_key_here
 
 # Publish module to official gallery
 Publish-Module 
-    -Path C:\develop\GitHub\powershell-build-utils\src\build-utils
+    -Path C:\develop\github\powershell-build-utils\src\BuildUtils
     -NuGetApiKey your_key_here
     -Verbose
 ```
@@ -79,7 +79,7 @@ run following command in the src directory.
 nuget.exe pack .\BuildUtils.nuspec
 ```
 
-This will create a nuget package that can be pushed on a specific feed by this command 
+This will create a nuget package that can be pushed on a specific feed by this command
 
 ```Powershell
 nuget.exe push build-utils.0.1.1.nupkg yourapikey -src https://www.myget.org/F/alkampfer/api/v3/index.json
@@ -89,4 +89,18 @@ To verify that the module is correct you can check for package correctness with 
 
 ```Powershell
 Test-ModuleManifest -Path .\BuildUtils.psd1
+```
+
+## Some reminder on how to use modules
+
+To verify if we have installed a specific function we can use the following command.
+
+```Powershell
+Get-Command Get-7ZipLocation
+```
+
+If you have the function installed on a specific module, you can always uninstall module (module name can be found with previous command)
+
+```Powershell
+Uninstall-Module -name build-utils -Force
 ```
