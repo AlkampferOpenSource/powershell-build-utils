@@ -263,5 +263,34 @@ function Update-SourceVersion
     }
 }
 
+<#
+.SYNOPSIS
+Get location of latest msbuild installed on the system
+
+.DESCRIPTION
+It requires modules VSSetup installed in the system, you can install
+with standard instruction
+
+Install-Module VSSetup -Scope CurrentUser -Force
+
+.EXAMPLE
+
+$msbuildLocation = Get-LatestMsbuildLocation
+set-alias msb $msbuildLocation 
+
+msb yoursolution.sln
+#>
+function Get-LatestMsbuildLocation
+{
+  Param 
+  (
+  )
+    $latestVsInstallationInfo = Get-VSSetupInstance -All | Sort-Object -Property InstallationVersion -Descending | Select-Object -First 1
+    $msbuildLocation = "$($latestVsInstallationInfo.InstallationPath)\MSBuild\Current\Bin\msbuild.exe"
+    return $msbuildLocation
+}
+
+Export-ModuleMember -Function * -Cmdlet *
+
 Export-ModuleMember -Function * -Cmdlet *
   
