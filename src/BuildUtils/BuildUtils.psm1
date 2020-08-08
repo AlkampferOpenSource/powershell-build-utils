@@ -352,8 +352,16 @@ function Get-NunitTestsConsoleRunner
   )
     
     $nunitLocation = "$env:TEMP\nunitrunners"
-    if (!(Test-Path -Path $nunitLocation)) {
+    $consoleRunner = ""
+    if (Test-Path -Path $nunitLocation) {
+      $consoleRunner = Get-ChildItem -Path $nunitLocation -Name nunit3-console.exe -Recurse 
+      if ($consoleRunner -eq $null) {
+          Write-Host "no runner found in folder $nunitLocation"
+          Remove-Item $nunitLocation -Recurse
+      }
+    }
 
+    if (!(Test-Path -Path $nunitLocation)) {
       $nugetLocation = Get-NugetLocation
       set-alias nunitinternal $nugetLocation
       nunitinternal install NUnit.Runners -OutputDirectory $nunitLocation
