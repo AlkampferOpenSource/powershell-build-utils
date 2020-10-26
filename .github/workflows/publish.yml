@@ -35,6 +35,5 @@ jobs:
           $commits = $gvOutput.CommitsSinceVersionSourcePadded
           $preReleaseTag = "-" + $gvOutput.PreReleaseLabel + $gvOutput.CommitsSinceVersionSourcePadded
           Write-Host "Publishing -version " + $gvOutput.MajorMinorPatch + "-preReleaseTag " + $preReleaseTag + " -apiKey xxx"
-          $gvOutput = dotnet tool run dotnet-gitversion /config GitVersion.yml | Out-String | ConvertFrom-Json
-           .\publish.ps1 -version $gvOutput.MajorMinorPatch -preReleaseTag $preReleaseTag -apiKey $env:API_KEY
+          .\publish.ps1 -version $gvOutput.MajorMinorPatch -preReleaseTag $preReleaseTag -apiKey $env:API_KEY
           
