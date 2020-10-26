@@ -31,10 +31,9 @@ jobs:
         run: |
           dotnet tool restore
           $gvOutput = dotnet tool run dotnet-gitversion /config GitVersion.yml | Out-String | ConvertFrom-Json
-          $preLabel = $gvOutput.PreReleaseLabel
-          $commits = $gvOutput.CommitsSinceVersionSourcePadded
-          $preReleaseTag = "-" + $gvOutput.PreReleaseLabel + $gvOutput.CommitsSinceVersionSourcePadded
+          $preLabel = $gvOutput.NuGetPreReleaseTagV2
+
+          $preReleaseTag = "-" + $preLabel
           Write-Host "Publishing -version " + $gvOutput.MajorMinorPatch + "-preReleaseTag " + $preReleaseTag + " -apiKey xxx"
-          $gvOutput = dotnet tool run dotnet-gitversion /config GitVersion.yml | Out-String | ConvertFrom-Json
-           .\publish.ps1 -version $gvOutput.MajorMinorPatch -preReleaseTag $preReleaseTag -apiKey $env:API_KEY
+          .\publish.ps1 -version $gvOutput.MajorMinorPatch -preReleaseTag $preReleaseTag -apiKey $env:API_KEY
           
