@@ -1,30 +1,41 @@
 
 # Simple repository for various PowerShell scripts
 
-## How to publish on PowerShell official gallery
+## How to publish on PowerShell official gallery 
 
-Please follow the instruction you find at [official GitHub repository](https://github.com/anpur/powershellget-module). 
+All functions are now separated in multiple files. To simplify publishing all of them
+are simply combined in a single file to [speedup loading ](https://evotec.xyz/powershell-single-psm1-file-versus-multi-file-modules/) and finally automatically published
+with the sample script publish.ps1.
 
+To publish utility you can simply call
+
+```Powershell
+ .\publish.ps1 -version x.y.z -apiKey yourApiKeyHere
+```
+
+## How to publish on PowerShell official gallery (old)
+
+Please follow the instruction you find at [official GitHub repository](https://github.com/anpur/powershellget-module).
 
 ```Powershell
 # Register local provider
-Register-PSRepository
-    -Name Demo_build_utils
-    -SourceLocation  C:\develop\GitHub\powershell-build-utils\src\BuildUtils
-    -PublishLocation  C:\develop\GitHub\powershell-build-utils\src\BuildUtils
-    -InstallationPolicy Trusted
+Register-PSRepository `
+    -Name Demo_build_utils `
+    -SourceLocation  C:\develop\GitHub\powershell-build-utils\src\BuildUtils `
+    -PublishLocation  C:\develop\GitHub\powershell-build-utils\src\BuildUtils `
+    -InstallationPolicy Trusted 
 
 # Publish module in local repository
-Publish-Module 
-    -Path C:\develop\github\powershell-build-utils\src\BuildUtils
-    -Repository Demo_build_utils 
-    -NuGetApiKey your_key_here
+Publish-Module `
+    -Path C:\develop\github\powershell-build-utils\src\BuildUtils `
+    -Repository Demo_build_utils ` 
+    -NuGetApiKey your_key_here 
 
 # Publish module to official gallery
-Publish-Module 
-    -Path C:\develop\github\powershell-build-utils\src\BuildUtils
-    -NuGetApiKey your_key_here
-    -Verbose
+Publish-Module `
+    -Path C:\develop\github\powershell-build-utils\src\BuildUtils `
+    -NuGetApiKey your_key_here `
+    -Verbose 
 ```
 
 ## How to manually use nuget.exe to publish (old)
