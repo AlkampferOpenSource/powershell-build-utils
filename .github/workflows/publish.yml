@@ -33,7 +33,12 @@ jobs:
           $gvOutput = dotnet tool run dotnet-gitversion /config GitVersion.yml | Out-String | ConvertFrom-Json
           $preLabel = $gvOutput.NuGetPreReleaseTagV2
 
-          $preReleaseTag = "-" + $preLabel
+          if ($preLabel -eq "") {
+            $preReleaseTag = ""
+          } else {
+            $preReleaseTag = "-" + $preLabel
+          }
+
           Write-Host "Publishing -version " + $gvOutput.MajorMinorPatch + "-preReleaseTag " + $preReleaseTag + " -apiKey xxx"
           .\publish.ps1 -version $gvOutput.MajorMinorPatch -preReleaseTag $preReleaseTag -apiKey $env:API_KEY
           
