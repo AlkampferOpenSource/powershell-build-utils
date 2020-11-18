@@ -21,6 +21,9 @@ content could be
   }
 }
 
+.PARAMETER ConfigurationFile
+Location of GitVersion.yml file, you can specify full path to the file
+
 .EXAMPLE
 
 $version = Invoke-GitVersion
@@ -34,7 +37,7 @@ function Invoke-Gitversion
 {
     Param 
     (
-        
+        [string] $ConfigurationFile = "GitVersion.yml"
     )
 
     [hashtable]$return = @{}
@@ -42,8 +45,8 @@ function Invoke-Gitversion
     Write-Host "restoring tooling for gitversion"
     dotnet tool restore
 
-    Write-Host "Running gitversion to determine version"
-    $gitVersionOutput = dotnet tool run dotnet-gitversion /config GitVersion.yml | Out-String
+    Write-Host "Running gitversion to determine version with config file $ConfigurationFile"
+    $gitVersionOutput = dotnet tool run dotnet-gitversion /config $ConfigurationFile | Out-String
     $version = $gitVersionOutput | Out-String | ConvertFrom-Json
     Write-Host "Raw GitVersion output"
     Write-Host $gitVersionOutput
