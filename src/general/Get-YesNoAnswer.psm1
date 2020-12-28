@@ -1,3 +1,19 @@
+<#
+.SYNOPSIS
+Allow for asking a simple yes/no question
+
+.DESCRIPTION
+Given a question this function ask for a yes/no response
+it handles default value, casing and accepts both y n short answer
+or long yes no version
+
+.EXAMPLE
+
+Get-YesNoAnswer -question "Do you want to do this?" -default $true
+
+.NOTES
+
+#>
 function Get-YesNoAnswer(
     [string] $question,
     [System.Nullable[bool]] $default = $null) 
