@@ -23,6 +23,7 @@ if (!(Test-Path "$scriptPath\BuildUtils"))
 $ScriptFunctions = @( Get-ChildItem -Path $srcPath\*.ps1 -ErrorAction SilentlyContinue -Recurse )
 $ModulePSM = @( Get-ChildItem -Path $srcPath\*.psm1 -ErrorAction SilentlyContinue -Recurse )
 foreach ($FilePath in $ScriptFunctions) {
+    Write-Host "Combining file $FilePath"
     $Results = [System.Management.Automation.Language.Parser]::ParseFile($FilePath, [ref]$null, [ref]$null)
     $Functions = $Results.EndBlock.Extent.Text
     $Functions | Add-Content -Path $outFile
@@ -31,6 +32,7 @@ foreach ($FilePath in $ModulePSM) {
     $Content = Get-Content $FilePath
     $Content | Add-Content -Path $outFile
 }
+Write-Output "All functions collapsed in single file $outFile"
 "Export-ModuleMember -Function * -Cmdlet *" | Add-Content -Path $outFile
 
 # Now replace version in psd1
