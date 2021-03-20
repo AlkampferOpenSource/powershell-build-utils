@@ -28,8 +28,8 @@ Location of GitVersion.yml file, you can specify full path to the file
 
 $version = Invoke-GitVersion
 
-Write-Host "Assembly version is $($version.assemblyVer)"
-Write-Host "File version is $($version.assemblyFileVer)"
+Write-Host "Assembly version is $($version.assemblyVersion)"
+Write-Host "File version is $($version.assemblyFileVersion)"
 Write-Host "Nuget version is $($version.nugetVersion)"
 Write-Host "Informational version is $($version.assemblyInformationalVersion)"
 #>
@@ -47,9 +47,10 @@ function Invoke-Gitversion
 
     Write-Host "Running gitversion to determine version with config file $ConfigurationFile"
     $gitVersionOutput = dotnet tool run dotnet-gitversion /config $ConfigurationFile | Out-String
-    $version = $gitVersionOutput | Out-String | ConvertFrom-Json
     Write-Host "Raw GitVersion output"
     Write-Host $gitVersionOutput
+
+    $version = $gitVersionOutput | Out-String | ConvertFrom-Json
 
     Write-Host "Parsed value to be returned"
     $return.assemblyVersion = $version.AssemblySemVer
