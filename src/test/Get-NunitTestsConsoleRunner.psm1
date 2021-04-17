@@ -29,8 +29,8 @@ function Get-NunitTestsConsoleRunner
 
     if (!(Test-Path -Path $nunitLocation)) {
       $nugetLocation = Get-NugetLocation
-      set-alias nunitinternal $nugetLocation
-      nunitinternal install NUnit.Runners -OutputDirectory $nunitLocation | Out-Null
+      set-alias nugetinternal $nugetLocation
+      nugetinternal install NUnit.Runners -OutputDirectory $nunitLocation | Out-Null
     }
 
     #Now we need to locate the console runner
