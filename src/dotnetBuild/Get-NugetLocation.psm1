@@ -16,7 +16,6 @@ function Get-NugetLocation
   Param 
   (
   )
-    
     $nugetLocation = "$env:TEMP\nuget.exe"
     if (!(Test-Path -Path $nugetLocation)) {
 
