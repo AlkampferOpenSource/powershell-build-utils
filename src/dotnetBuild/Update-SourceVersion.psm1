@@ -54,33 +54,33 @@ function Update-SourceVersion
         $assemblyInformationalVersion = $fileAssemblyVersion
     }
     
-    Write-Host "Executing Update-SourceVersion in path $SrcPath, Version is $assemblyVersion and File Version is $fileAssemblyVersion and Informational Version is $assemblyInformationalVersion"
+    Write-Debug "Executing Update-SourceVersion in path $SrcPath, Version is $assemblyVersion and File Version is $fileAssemblyVersion and Informational Version is $assemblyInformationalVersion"
         
     $AllVersionFiles = Get-ChildItem $SrcPath\* -Include AssemblyInfo.cs,AssemblyInfo.vb -recurse
   
     foreach ($file in $AllVersionFiles)
     { 
-        Write-Host "Modifying file " + $file.FullName
-        #save the file for restore
-        $backFile = $file.FullName + "._ORI"
+      Write-Debug "Modifying file " + $file.FullName
+      #save the file for restore
+      $backFile = $file.FullName + "._ORI"
 
-        Copy-Item $file.FullName $backFile -Force
-        #now load all content of the original file and rewrite modified to the same file
-        $content = Get-Content $file.FullName 
-        Remove-Item $file.FullName
-        if ($modifyAssemblyVersion) 
-        {
-          $content |
-            %{$_ -replace 'AssemblyVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', "AssemblyVersion(""$assemblyVersion"")" } |
-            %{$_ -replace 'AssemblyFileVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', "AssemblyFileVersion(""$fileAssemblyVersion"")" } |
-            %{$_ -replace 'AssemblyInformationalVersion\(".*"\)', "AssemblyInformationalVersion(""$assemblyInformationalVersion"")" } |
-            Set-Content -Encoding UTF8 -Path $file.FullName -Force
-        }
-        else {
-          $content |
-            %{$_ -replace 'AssemblyFileVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', "AssemblyFileVersion(""$fileAssemblyVersion"")" } |
-            %{$_ -replace 'AssemblyInformationalVersion\(".*"\)', "AssemblyInformationalVersion(""$assemblyInformationalVersion"")" } |
-            Set-Content -Encoding UTF8 -Path $file.FullName -Force
-        }
+      Copy-Item $file.FullName $backFile -Force
+      #now load all content of the original file and rewrite modified to the same file
+      $content = Get-Content $file.FullName 
+      Remove-Item $file.FullName
+      if ($modifyAssemblyVersion) 
+      {
+        $content |
+          %{$_ -replace 'AssemblyVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', "AssemblyVersion(""$assemblyVersion"")" } |
+          %{$_ -replace 'AssemblyFileVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', "AssemblyFileVersion(""$fileAssemblyVersion"")" } |
+          %{$_ -replace 'AssemblyInformationalVersion\(".*"\)', "AssemblyInformationalVersion(""$assemblyInformationalVersion"")" } |
+          Set-Content -Encoding UTF8 -Path $file.FullName -Force
+      }
+      else {
+        $content |
+          %{$_ -replace 'AssemblyFileVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', "AssemblyFileVersion(""$fileAssemblyVersion"")" } |
+          %{$_ -replace 'AssemblyInformationalVersion\(".*"\)', "AssemblyInformationalVersion(""$assemblyInformationalVersion"")" } |
+          Set-Content -Encoding UTF8 -Path $file.FullName -Force
+      }
     }
 }

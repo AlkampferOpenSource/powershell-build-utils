@@ -42,28 +42,28 @@ function Invoke-Gitversion
 
     [hashtable]$return = @{}
 
-    Write-Host "restoring tooling for gitversion"
+    Write-Debug "restoring tooling for gitversion"
     dotnet tool restore
 
-    Write-Host "Running gitversion to determine version with config file $ConfigurationFile"
+    Write-Debug "Running gitversion to determine version with config file $ConfigurationFile"
     $gitVersionOutput = dotnet tool run dotnet-gitversion /config $ConfigurationFile | Out-String
-    Write-Host "Raw GitVersion output"
-    Write-Host $gitVersionOutput
+    Write-Debug "Raw GitVersion output"
+    Write-Debug $gitVersionOutput
 
     $version = $gitVersionOutput | Out-String | ConvertFrom-Json
 
-    Write-Host "Parsed value to be returned"
+    Write-Debug "Parsed value to be returned"
     $return.assemblyVersion = $version.AssemblySemVer
     $return.assemblyFileVersion = $version.AssemblySemFileVer
     $return.nugetVersion = $version.NuGetVersionV2
     $return.assemblyInformationalVersion = $version.FullSemVer + "." + $version.Sha
     $return.fullSemver = $version.FullSemVer
 
-    Write-Host "Assembly version is $($return.assemblyVersion)"
-    Write-Host "File version is $($return.assemblyFileVersion)"
-    Write-Host "Nuget version is $($return.nugetVersion)"
-    Write-Host "Informational version is $($return.assemblyInformationalVersion)"
-    Write-Host "FullSemVer version is $($return.fullSemver)"
+    Write-Debug "Assembly version is $($return.assemblyVersion)"
+    Write-Debug "File version is $($return.assemblyFileVersion)"
+    Write-Debug "Nuget version is $($return.nugetVersion)"
+    Write-Debug "Informational version is $($return.assemblyInformationalVersion)"
+    Write-Debug "FullSemVer version is $($return.fullSemver)"
 
     return $return
 }
