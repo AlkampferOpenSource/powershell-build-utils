@@ -21,9 +21,10 @@ function Get-NunitTestsConsoleRunner
     $consoleRunner = ""
     if (Test-Path -Path $nunitLocation) {
       $consoleRunner = Get-ChildItem -Path $nunitLocation -Name nunit3-console.exe -Recurse 
-      if ($consoleRunner -eq $null) {
-          Write-Host "no runner found in folder $nunitLocation"
-          Remove-Item $nunitLocation -Recurse
+      if ($consoleRunner -eq $null) 
+      {
+        Write-Debug "no runner found in folder $nunitLocation"
+        Remove-Item $nunitLocation -Recurse
       }
     }
 
@@ -35,6 +36,6 @@ function Get-NunitTestsConsoleRunner
 
     #Now we need to locate the console runner
     $consoleRunner = Get-ChildItem -Path $nunitLocation -Name nunit3-console.exe -Recurse 
-    Write-Host "Found nunit runner in $nunitLocation\$consoleRunner"
+    Write-Debug "Found nunit runner in $nunitLocation\$consoleRunner"
     return "$nunitLocation\$consoleRunner"
 }
