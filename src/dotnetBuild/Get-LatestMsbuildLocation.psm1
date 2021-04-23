@@ -26,14 +26,14 @@ function Get-LatestMsbuildLocation
     } else {
       $latestVsInstallationInfo = Get-VSSetupInstance -All | Sort-Object -Property InstallationVersion -Descending | Select-Object -First 1
     }
-    Write-Host "Latest version installed is $($latestVsInstallationInfo.InstallationVersion)"
+    Write-Debug "Latest version installed is $($latestVsInstallationInfo.InstallationVersion)"
     if ($latestVsInstallationInfo.InstallationVersion -like "15.*") {
       $msbuildLocation = "$($latestVsInstallationInfo.InstallationPath)\MSBuild\15.0\Bin\msbuild.exe"
     
-      Write-Host "Located msbuild for Visual Studio 2017 in $msbuildLocation"
+      Write-Debug "Located msbuild for Visual Studio 2017 in $msbuildLocation"
     } else {
       $msbuildLocation = "$($latestVsInstallationInfo.InstallationPath)\MSBuild\Current\Bin\msbuild.exe"
-      Write-Host "Located msbuild in $msbuildLocation"
+      Write-Debug "Located msbuild in $msbuildLocation"
     }
 
     return $msbuildLocation
