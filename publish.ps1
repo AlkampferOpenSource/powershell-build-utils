@@ -43,4 +43,6 @@ Set-Content "$scriptPath\BuildUtils\BuildUtils.psd1" -Value $fileContent  -Force
 Publish-Module `
     -Path $scriptPath\BuildUtils `
     -NuGetApiKey $apiKey `
-    -Verbose -Force
+    -Verbose -Force `
+    -ProjectUri "https://github.com/AlkampferOpenSource/powershell-build-utils" `
+    -LicenseUri "https://github.com/AlkampferOpenSource/powershell-build-utils/blob/master/LICENSE"
