@@ -60,7 +60,7 @@ function Update-SourceVersion
   
     foreach ($file in $AllVersionFiles)
     { 
-      Write-Debug "Modifying file " + $file.FullName
+      Write-Debug "Modifying file $($file.FullName)"
       #save the file for restore
       $backFile = $file.FullName + "._ORI"
 
