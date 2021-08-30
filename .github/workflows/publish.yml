@@ -39,6 +39,6 @@ jobs:
             $preReleaseTag = "-" + $preLabel
           }
 
-          Write-Host "Publishing -version " + $gvOutput.MajorMinorPatch + "-preReleaseTag " + $preReleaseTag + " -apiKey xxx"
+          Write-Host "Publishing -version " $gvOutput.MajorMinorPatch "-preReleaseTag " $preReleaseTag " -apiKey xxx"
           .\publish.ps1 -version $gvOutput.MajorMinorPatch -preReleaseTag $preReleaseTag -apiKey $env:API_KEY
           

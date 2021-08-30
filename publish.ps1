@@ -36,12 +36,12 @@ Write-Output "All functions collapsed in single file $outFile"
 "Export-ModuleMember -Function * -Cmdlet *" | Add-Content -Path $outFile
 
 # Now replace version in psd1
-
 $fileContent = Get-Content "$scriptPath\src\BuildUtils.psd1.source"
 $fileContent = $fileContent -replace '{{version}}', $version
 $fileContent = $fileContent -replace '{{preReleaseTag}}', $preReleaseTag 
 Set-Content "$scriptPath\BuildUtils\BuildUtils.psd1" -Value $fileContent  -Force
 
+Write-Output "About to publish module"
 Publish-Module `
     -Path $scriptPath\BuildUtils `
     -NuGetApiKey $apiKey `
