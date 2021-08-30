@@ -40,8 +40,30 @@ function Invoke-Gitversion
       [string] $ConfigurationFile = "GitVersion.yml"
   )
 
+  $sampleContent = '
+  {
+    "version": 1,
+    "isRoot": true,
+    "tools": {
+      "gitversion.tool": {
+        "version": "5.2.4",
+        "commands": [
+          "dotnet-gitversion"
+        ]
+      }
+    }
+  }'
+
   [hashtable]$return = @{}
 
+  Write-Debug "Checking present of dotnet-tools.json file"
+  $configFile = "./config/dotnet-tools.json"
+  if (-not (Test-Path $configFile))
+  {
+    Write-Debug "Config file $configFile does not exists will create one"
+    New-Item -ItemType Directory -Path "config"
+    Set-Content -Path $configFile -Value $sampleContent
+  }
   Write-Debug "restoring tooling for gitversion"
   dotnet tool restore | Out-Null
 
