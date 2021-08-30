@@ -40,29 +40,43 @@ function Invoke-Gitversion
       [string] $ConfigurationFile = "GitVersion.yml"
   )
 
-  $sampleContent = '
-  {
-    "version": 1,
-    "isRoot": true,
-    "tools": {
-      "gitversion.tool": {
-        "version": "5.2.4",
-        "commands": [
-          "dotnet-gitversion"
-        ]
-      }
+  $sampleContent = '{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "gitversion.tool": {
+      "version": "5.2.4",
+      "commands": [
+        "dotnet-gitversion"
+      ]
     }
-  }'
+  }
+}'
+
+  $sampleGitVersion = 'branches: {}
+ignore:
+  sha: []
+merge-message-formats: {}
+mode: ContinuousDeployment'
 
   [hashtable]$return = @{}
 
   Write-Debug "Checking present of dotnet-tools.json file"
-  $configFile = "./config/dotnet-tools.json"
+  $toolFile = "./.config/dotnet-tools.json"
+  $configFile = "./.config/GitVersion.yml"
+  if (-not (Test-Path "./.config"))
+  {
+    New-Item -ItemType Directory -Path ".config"
+  }
+  if (-not (Test-Path $toolFile))
+  {
+    Write-Debug "Config file $toolFile does not exists will create one"
+    Set-Content -Path $toolFile -Value $sampleContent
+  }
   if (-not (Test-Path $configFile))
   {
     Write-Debug "Config file $configFile does not exists will create one"
-    New-Item -ItemType Directory -Path "config"
-    Set-Content -Path $configFile -Value $sampleContent
+    Set-Content -Path $configFile -Value $sampleGitVersion
   }
   Write-Debug "restoring tooling for gitversion"
   dotnet tool restore | Out-Null
