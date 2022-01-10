@@ -20,9 +20,7 @@ function Write-LogError(
     [string] $message,
     [bool] $haltExecution = $false) 
 {
-    Write-Error $message
-    # Now trying to detect if we are running inside a CI engine, to try to emit correct error message
-
+    # Trying to detect if we are running inside a CI engine, to try to emit correct error message
     if ("azdo" -eq $ci_engine)
     {
         Write-Host "##vso[task.logissue type=error]$message"
@@ -31,6 +29,9 @@ function Write-LogError(
     {
         Write-Host "::error::$message"
     }
+    
+    # Write with Write-error always.
+    Write-Error $message
 
     if ($true -eq $haltExecution)
     {
