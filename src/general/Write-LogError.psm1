@@ -31,7 +31,7 @@ function Write-LogError(
     }
     
     # Write with Write-error always.
-    Write-Error $message
+    Write-Host $message -ForegroundColor Red
 
     if ($true -eq $haltExecution)
     {
