@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+It contains all the data needed to work with gitversion as well as a success
+property that returns to the caller if the invocation of GitVersion succeeded
+or failed.
+#>
+class GitVersion 
+{
+  [bool] $Success
+  [string]$AssemblyVersion
+  [string]$AssemblyFileVersion
+  [string]$NugetVersion
+  [string]$AssemblyInformationalVersion
+  [string]$FullSemver
+}
 
 <#
 .SYNOPSIS
@@ -28,17 +43,22 @@ Location of GitVersion.yml file, you can specify full path to the file
 
 $version = Invoke-GitVersion
 
-Write-Host "Assembly version is $($version.assemblyVersion)"
-Write-Host "File version is $($version.assemblyFileVersion)"
-Write-Host "Nuget version is $($version.nugetVersion)"
-Write-Host "Informational version is $($version.assemblyInformationalVersion)"
+if ($version.Success) #You can check for success of operation.
+
+Write-Host "Assembly version is $($version.AssemblyVersion)"
+Write-Host "File version is $($version.AssemblyFileVersion)"
+Write-Host "Nuget version is $($version.NugetVersion)"
+Write-Host "Informational version is $($version.AssemblyInformationalVersion)"
 #>
 function Invoke-Gitversion
 {
+  [OutputType([GitVersion])]
   Param 
   (
       [string] $ConfigurationFile = "GitVersion.yml"
   )
+
+  Write-Information -MessageData "Running Invoke-Gitversion to determine version numbers for current repository."
 
   $sampleContent = '{
   "version": 1,
@@ -59,9 +79,9 @@ ignore:
 merge-message-formats: {}
 mode: ContinuousDeployment'
 
-  [hashtable]$return = @{}
+  $retvalue = [GitVersion]::new()
 
-  Write-Debug "Checking present of dotnet-tools.json file"
+  Write-Verbose "Checking present of dotnet-tools.json file"
   $toolFile = "./.config/dotnet-tools.json"
   $configFile = "./.config/GitVersion.yml"
   if (-not (Test-Path "./.config"))
@@ -78,28 +98,44 @@ mode: ContinuousDeployment'
     Write-Debug "Config file $configFile does not exists will create one"
     Set-Content -Path $configFile -Value $sampleGitVersion
   }
-  Write-Debug "restoring tooling for gitversion"
+
+  Write-Verbose "restoring tooling for gitversion"
   dotnet tool restore | Out-Null
 
-  Write-Debug "Running gitversion to determine version with config file $ConfigurationFile"
+  if ($false -eq $?) 
+  {
+    Write-Error "Unable to run dotnet tool restore, execution of the command failed"
+    $retvalue.Success = $false
+    return $retvalue
+  }
+
+  Write-Verbose "Running gitversion to determine version with config file $ConfigurationFile"
   $gitVersionOutput = dotnet tool run dotnet-gitversion /config $ConfigurationFile | Out-String
-  Write-Debug "Raw GitVersion output"
-  Write-Debug $gitVersionOutput
+  if ($false -eq $?) 
+  {
+    Write-Error "Unable to run dotnet tool run dotnet-gitversion, execution of the command failed: $gitVersionOutput"
+    $retvalue.Success = $false
+    return $retvalue
+  }
+
+  Write-Verbose "Raw GitVersion output"
+  Write-Verbose $gitVersionOutput
 
   $version = $gitVersionOutput | Out-String | ConvertFrom-Json
 
-  Write-Debug "Parsed value to be returned"
-  $return.assemblyVersion = $version.AssemblySemVer
-  $return.assemblyFileVersion = $version.AssemblySemFileVer
-  $return.nugetVersion = $version.NuGetVersionV2
-  $return.assemblyInformationalVersion = $version.FullSemVer + "." + $version.Sha
-  $return.fullSemver = $version.FullSemVer
+  Write-Verbose "Parsed value to be returned"
+  $retvalue.Success = $true
+  $retvalue.AssemblyVersion = $version.AssemblySemVer
+  $retvalue.AssemblyFileVersion = $version.AssemblySemFileVer
+  $retvalue.NuGetVersion = $version.NuGetVersionV2
+  $retvalue.AssemblyInformationalVersion = $version.FullSemVer + "." + $version.Sha
+  $retvalue.FullSemVer = $version.FullSemVer
 
-  Write-Debug "Assembly version is $($return.assemblyVersion)"
-  Write-Debug "File version is $($return.assemblyFileVersion)"
-  Write-Debug "Nuget version is $($return.nugetVersion)"
-  Write-Debug "Informational version is $($return.assemblyInformationalVersion)"
-  Write-Debug "FullSemVer version is $($return.fullSemver)"
+  Write-Verbose "Assembly version is $($retvalue.AssemblyVersion)"
+  Write-Verbose "File version is $($retvalue.AssemblyFileVersion)"
+  Write-Verbose "Nuget version is $($retvalue.NuGetVersionV2)"
+  Write-Verbose "Informational version is $($retvalue.AssemblyInformationalVersion)"
+  Write-Verbose "FullSemVer version is $($retvalue.FullSemVer)"
 
-  return $return
+  return $retvalue
 }
