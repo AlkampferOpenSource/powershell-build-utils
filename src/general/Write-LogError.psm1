@@ -32,8 +32,9 @@ function Write-LogError(
         Write-Host "::error::$message"
     }
 
-    if ($haltExecution)
+    if ($true -eq $haltExecution)
     {
-       exit (1)
+        Write-Host "Request script exit!!!!!"
+        exit (1)
     }
 }

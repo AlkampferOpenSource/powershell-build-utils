@@ -10,14 +10,14 @@ Ci
 .EXAMPLE
 
 dotnet build foo.sln
-Check-LastExecution -message "Failed to foo the bar." -$haltExecution $true
+Assert-LastExecution -message "Failed to foo the bar." -$haltExecution $true
 
 .NOTES
 if you are in Continuous Integratino script the cmdlet expects
 to have variable $ci_engine set to one of the supported value = ["azdo", "github"]
 
 #>
-function Check-LastExecution(
+function Assert-LastExecution(
     [string] $message,
     [bool] $haltExecution = $false) 
 {
