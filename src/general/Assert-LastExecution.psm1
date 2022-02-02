@@ -10,7 +10,7 @@ Ci
 .EXAMPLE
 
 dotnet build foo.sln
-Assert-LastExecution -message "Failed to foo the bar." -$haltExecution $true
+Assert-LastExecution -message "Failed to foo the bar." -haltExecution $true
 
 .NOTES
 if you are in Continuous Integratino script the cmdlet expects
