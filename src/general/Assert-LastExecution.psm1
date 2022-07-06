@@ -23,6 +23,6 @@ function Assert-LastExecution(
 {
     if ($false -eq $?)
     {
-        Write-LogError -Message message -HaltExecution $haltExecution
+        Write-LogError -Message $message -HaltExecution $haltExecution
     }
 }
