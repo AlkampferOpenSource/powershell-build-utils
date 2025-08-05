@@ -41,6 +41,8 @@ $fileContent = $fileContent -replace '{{version}}', $version
 
 # Trim all leading '-' from $preReleaseTag
 $preReleaseTag = $preReleaseTag -replace '^-+', ''
+# Replace all '.' with '-' in $preReleaseTag
+$preReleaseTag = $preReleaseTag -replace '\.', ''
 
 $fileContent = $fileContent -replace '{{preReleaseTag}}', $preReleaseTag 
 Set-Content "$scriptPath\BuildUtils\BuildUtils.psd1" -Value $fileContent  -Force
