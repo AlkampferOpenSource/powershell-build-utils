@@ -28,7 +28,7 @@ content could be
   "isRoot": true,
   "tools": {
     "gitversion.tool": {
-      "version": "5.2.4",
+      "version": "6.3.0",
       "commands": [
         "dotnet-gitversion"
       ]
@@ -65,7 +65,7 @@ function Invoke-Gitversion
   "isRoot": true,
   "tools": {
     "gitversion.tool": {
-      "version": "5.2.4",
+      "version": "6.3.0",
       "commands": [
         "dotnet-gitversion"
       ]
@@ -127,7 +127,14 @@ mode: ContinuousDeployment'
   $retvalue.Success = $true
   $retvalue.AssemblyVersion = $version.AssemblySemVer
   $retvalue.AssemblyFileVersion = $version.AssemblySemFileVer
-  $retvalue.NuGetVersion = $version.NuGetVersionV2
+  
+  # Check if NuGetVersionV2 is null or empty, fallback to SemVer
+  if ([string]::IsNullOrEmpty($version.NuGetVersionV2)) {
+    $retvalue.NuGetVersion = $version.SemVer
+  } else {
+    $retvalue.NuGetVersion = $version.NuGetVersionV2
+  }
+  
   $retvalue.AssemblyInformationalVersion = $version.FullSemVer + "." + $version.Sha
   $retvalue.FullSemVer = $version.FullSemVer
 
