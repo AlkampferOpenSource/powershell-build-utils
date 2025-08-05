@@ -38,6 +38,10 @@ Write-Output "All functions collapsed in single file $outFile"
 # Now replace version in psd1
 $fileContent = Get-Content "$scriptPath\src\BuildUtils.psd1.source"
 $fileContent = $fileContent -replace '{{version}}', $version
+
+# Trim all leading '-' from $preReleaseTag
+$preReleaseTag = $preReleaseTag -replace '^-+', ''
+
 $fileContent = $fileContent -replace '{{preReleaseTag}}', $preReleaseTag 
 Set-Content "$scriptPath\BuildUtils\BuildUtils.psd1" -Value $fileContent  -Force
 
