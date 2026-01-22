@@ -1,0 +1,57 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run All Pester Tests",
+            "type": "shell",
+            "command": "Invoke-Pester",
+            "args": [
+                "-Path",
+                "${workspaceFolder}/tests",
+                "-Output",
+                "Detailed"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run Current Test File",
+            "type": "shell",
+            "command": "Invoke-Pester",
+            "args": [
+                "-Path",
+                "${file}",
+                "-Output",
+                "Detailed"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "group": "test"
+        },
+        {
+            "label": "Run Tests with Coverage",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "$config = New-PesterConfiguration; $config.CodeCoverage.Enabled = $true; $config.CodeCoverage.Path = '${workspaceFolder}/src/**/*.psm1'; $config.Run.Path = '${workspaceFolder}/tests'; $config.Output.Verbosity = 'Detailed'; Invoke-Pester -Configuration $config"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "group": "test"
+        }
+    ]
+}

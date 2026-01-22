@@ -8,6 +8,12 @@
         "dotnet-gitversion"
       ],
       "rollForward": false
+    },
+     "Microsoft.Sbom.DotNetTool": {
+      "version": "4.1.4",
+      "commands": [
+        "sbom-tool"
+      ]
     }
   }
 }

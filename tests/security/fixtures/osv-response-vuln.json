@@ -1,0 +1,27 @@
+{
+  "vulns": [
+    {
+      "id": "GHSA-x5rq-j2xg-h7qm",
+      "aliases": ["CVE-2021-23337"],
+      "summary": "Command Injection in lodash",
+      "details": "lodash versions prior to 4.17.21 are vulnerable to Command Injection via the template function.",
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "7.2"
+        }
+      ],
+      "published": "2021-02-15T18:15:00Z",
+      "modified": "2021-02-16T10:00:00Z",
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/advisories/GHSA-x5rq-j2xg-h7qm"
+        }
+      ]
+    }
+  ]
+}
