@@ -30,7 +30,7 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           dotnet tool restore
-          $gvOutput = dotnet-gitversion /config GitVersion.yml | Out-String | ConvertFrom-Json
+          $gvOutput = dotnet tool run dotnet-gitversion /config GitVersion.yml | Out-String | ConvertFrom-Json
           $preLabel = $gvOutput.PreReleaseTag
           write-host "GitVersion PreReleaseTag: " $preLabel
 

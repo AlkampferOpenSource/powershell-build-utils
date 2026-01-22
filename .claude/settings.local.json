@@ -7,7 +7,14 @@
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"\n# Try with Common.Shared solution which might be smaller\ndotnet list ''A:\\\\Develop\\\\Proximo\\\\Jarvis\\\\src\\\\Jarvis.Common.Shared.sln'' package --vulnerable --include-transitive --format json 2>&1 | Select-Object -First 100\n\")",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"\n# Check PowerShell version\n$PSVersionTable.PSVersion\n\")",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"\nSet-Location ''A:\\\\Develop\\\\Proximo\\\\Jarvis\\\\src\\\\frontend\\\\Jarvis.UI''\nnpm audit --json 2>&1 | Select-Object -First 100\n\")",
-      "Bash(ForEach-Object { $_.Vulnerabilities.Count })"
+      "Bash(ForEach-Object { $_.Vulnerabilities.Count })",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix typo: otnet -> dotnet in publish.yml\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)",
+      "Bash(git commit --no-gpg-sign -m \"$\\(cat <<''EOF''\nFix typo: otnet -> dotnet in publish.yml\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(gh run watch:*)"
     ]
   }
 }
