@@ -14,7 +14,9 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nFix typo: otnet -> dotnet in publish.yml\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git push)",
       "Bash(git commit --no-gpg-sign -m \"$\\(cat <<''EOF''\nFix typo: otnet -> dotnet in publish.yml\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(gh run watch:*)"
+      "Bash(gh run watch:*)",
+      "Bash(pwsh:*)",
+      "Bash(wmic process:*)"
     ]
   }
 }

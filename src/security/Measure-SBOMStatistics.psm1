@@ -55,6 +55,13 @@ function Initialize-SBOMStatistics {
             Moderate = 0
             Low = 0
         }
+        NpmVulnerability = @{
+            Total = 0
+            Critical = 0
+            High = 0
+            Moderate = 0
+            Low = 0
+        }
     }
 }
 
@@ -157,6 +164,38 @@ function Update-DotnetVulnerabilityStats {
     $Statistics.DotnetVulnerability[$Severity]++
 }
 
+function Update-NpmVulnerabilityStats {
+    <#
+    .SYNOPSIS
+    Update npm-specific vulnerability statistics by severity
+
+    .DESCRIPTION
+    Increments counters for vulnerabilities found by npm audit.
+    Tracks severity breakdown (Critical, High, Moderate, Low).
+
+    .PARAMETER Statistics
+    The statistics object to update
+
+    .PARAMETER Severity
+    The vulnerability severity level
+
+    .EXAMPLE
+    Update-NpmVulnerabilityStats -Statistics $stats -Severity "High"
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [PSCustomObject] $Statistics,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateSet("Critical", "High", "Moderate", "Low")]
+        [string] $Severity
+    )
+
+    $Statistics.NpmVulnerability.Total++
+    $Statistics.NpmVulnerability[$Severity]++
+}
+
 function Get-StatisticsSummary {
     <#
     .SYNOPSIS
@@ -196,9 +235,10 @@ function Get-StatisticsSummary {
         Enrichment = $Statistics.Enrichment
         Vulnerability = $Statistics.Vulnerability
         DotnetVulnerability = $Statistics.DotnetVulnerability
+        NpmVulnerability = $Statistics.NpmVulnerability
         EnrichmentSuccessRate = $enrichmentSuccessRate
         VulnerabilityRate = $vulnerabilityRate
     }
 }
 
-Export-ModuleMember -Function Initialize-SBOMStatistics, Update-EnrichmentStats, Update-VulnerabilityStats, Update-DotnetVulnerabilityStats, Get-StatisticsSummary
+Export-ModuleMember -Function Initialize-SBOMStatistics, Update-EnrichmentStats, Update-VulnerabilityStats, Update-DotnetVulnerabilityStats, Update-NpmVulnerabilityStats, Get-StatisticsSummary
