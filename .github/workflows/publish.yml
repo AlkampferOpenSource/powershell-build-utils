@@ -32,11 +32,13 @@ jobs:
           dotnet tool restore
           $gvOutput = dotnet tool run dotnet-gitversion /config GitVersion.yml | Out-String | ConvertFrom-Json
           $preLabel = $gvOutput.PreReleaseTag
+          write-host "GitVersion PreReleaseTag: " $preLabel
 
           if ($preLabel -eq "") {
             $preReleaseTag = ""
           } else {
-            $preReleaseTag = "-" + $preLabel
+            $sanitizedLabel = ($preLabel -replace '[^a-zA-Z0-9]', '')
+            $preReleaseTag = "-" + $sanitizedLabel
           }
 
           Write-Host "Publishing -version " $gvOutput.MajorMinorPatch "-preReleaseTag " $preReleaseTag " -apiKey xxx"

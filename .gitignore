@@ -14,3 +14,5 @@ BuildUtils/
 # various other files
 *.nupkg
 nuget.exe
+
+tmp/

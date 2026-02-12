@@ -1,0 +1,13 @@
+{
+  "name": "lodash",
+  "version": "4.17.21",
+  "license": "MIT",
+  "author": {
+    "name": "John-David Dalton"
+  },
+  "homepage": "https://lodash.com/",
+  "repository": {
+    "url": "git+https://github.com/lodash/lodash.git"
+  },
+  "description": "Lodash modular utilities."
+}
