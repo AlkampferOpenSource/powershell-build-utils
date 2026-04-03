@@ -25,16 +25,68 @@ sz a -mx=9 -r -mmt=on $Target $Source
 #>
 function Get-7ZipLocation()
 {
-    $exeLocation = "$env:TEMP\7z"
-    $sevenZipExe = "$exeLocation\7za.exe"
-    Write-Debug "Testing for 7zip executable [$sevenZipExe]"
-    if (-not (test-path $sevenZipExe)) 
+    $candidateCommands = @("7z.exe", "7za.exe", "7z", "7za")
+    foreach ($candidateCommand in $candidateCommands)
     {
-        Write-Debug "7zip executable [$sevenZipExe] not present, download from http://www.7-zip.org/a/7za920.zip to $env:TEMP\7zip.zip"
-        Invoke-WebRequest -Uri "http://www.7-zip.org/a/7za920.zip" -OutFile "$env:TEMP\7zip.zip"
-        Write-Debug "Unzipping $env:TEMP\7zip.zip to directory $exeLocation"
-        Expand-WithFramework -zipFile "$env:TEMP\7zip.zip" -destinationFolder "$exeLocation" -quietMode $true 
-        $sevenZipExe = "$exeLocation\7za.exe"
-    } 
+        $existingCommand = Get-Command $candidateCommand -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -ne $existingCommand -and -not [string]::IsNullOrWhiteSpace($existingCommand.Source) -and (Test-Path $existingCommand.Source))
+        {
+            Write-Debug "Using 7zip executable already available on PATH [$($existingCommand.Source)]"
+            return $existingCommand.Source
+        }
+    }
+
+    $commonInstallLocations = @(
+        "$env:ProgramFiles\7-Zip\7z.exe",
+        "${env:ProgramFiles(x86)}\7-Zip\7z.exe",
+        "$env:ChocolateyInstall\bin\7z.exe",
+        "$env:ChocolateyInstall\tools\7za.exe"
+    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+    foreach ($commonInstallLocation in $commonInstallLocations)
+    {
+        Write-Debug "Testing for 7zip executable [$commonInstallLocation]"
+        if (Test-Path $commonInstallLocation)
+        {
+            return $commonInstallLocation
+        }
+    }
+
+    $cacheRoot = if (-not [string]::IsNullOrWhiteSpace($env:AGENT_TOOLSDIRECTORY))
+    {
+        Join-Path $env:AGENT_TOOLSDIRECTORY "BuildUtils"
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($env:LOCALAPPDATA))
+    {
+        Join-Path $env:LOCALAPPDATA "BuildUtils"
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($env:ProgramData))
+    {
+        Join-Path $env:ProgramData "BuildUtils"
+    }
+    else
+    {
+        Join-Path $env:TEMP "BuildUtils"
+    }
+
+    $exeLocation = Join-Path $cacheRoot "tools\7zip"
+    $sevenZipExe = Join-Path $exeLocation "7za.exe"
+    $sevenZipArchive = Join-Path $cacheRoot "tools\7za920.zip"
+
+    Write-Debug "Testing cached 7zip executable [$sevenZipExe]"
+    if (-not (Test-Path $sevenZipExe))
+    {
+        $parentDirectory = Split-Path $sevenZipArchive -Parent
+        if (-not (Test-Path $parentDirectory))
+        {
+            New-Item -ItemType Directory -Path $parentDirectory -Force | Out-Null
+        }
+
+        Write-Debug "7zip executable not found, downloading https://www.7-zip.org/a/7za920.zip to [$sevenZipArchive]"
+        Invoke-WebRequest -Uri "https://www.7-zip.org/a/7za920.zip" -OutFile $sevenZipArchive
+        Write-Debug "Unzipping [$sevenZipArchive] to directory [$exeLocation]"
+        Expand-WithFramework -zipFile $sevenZipArchive -destinationFolder $exeLocation -quietMode $true 
+    }
+
     return $sevenZipExe 
 }
