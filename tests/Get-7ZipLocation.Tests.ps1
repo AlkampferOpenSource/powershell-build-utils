@@ -31,6 +31,7 @@ Describe 'Get-7ZipLocation' {
     It 'downloads 7zip in a stable cache folder when no local executable is available' {
         InModuleScope Get-7zipLocation {
             $env:AGENT_TOOLSDIRECTORY = 'C:\agent\_tool'
+            $env:BUILDUTILS_7ZIP_TOOLS_DIR = ''
             $env:LOCALAPPDATA = ''
             $env:ProgramData = 'C:\ProgramData'
             $env:TEMP = 'C:\Temp'
@@ -55,6 +56,31 @@ Describe 'Get-7ZipLocation' {
             Should -Invoke Expand-WithFramework -Times 1 -ParameterFilter {
                 $zipFile -eq 'C:\agent\_tool\BuildUtils\tools\7za920.zip' -and
                 $destinationFolder -eq 'C:\agent\_tool\BuildUtils\tools\7zip'
+            }
+        }
+    }
+
+    It 'uses an explicit tools root and alternate download url when provided' {
+        InModuleScope Get-7zipLocation {
+            Mock Get-Command { $null }
+            Mock Test-Path {
+                param($Path)
+                return $false
+            }
+            Mock New-Item {}
+            Mock Invoke-WebRequest {}
+            Mock Expand-WithFramework {}
+
+            $result = Get-7ZipLocation -ToolsRoot 'C:\cached-tools' -SevenZipUrl 'https://mirror.example.com/files/7za.zip'
+
+            $result | Should -Be 'C:\cached-tools\tools\7zip\7za.exe'
+            Should -Invoke Invoke-WebRequest -Times 1 -ParameterFilter {
+                $Uri -eq 'https://mirror.example.com/files/7za.zip' -and
+                $OutFile -eq 'C:\cached-tools\tools\7za.zip'
+            }
+            Should -Invoke Expand-WithFramework -Times 1 -ParameterFilter {
+                $zipFile -eq 'C:\cached-tools\tools\7za.zip' -and
+                $destinationFolder -eq 'C:\cached-tools\tools\7zip'
             }
         }
     }
