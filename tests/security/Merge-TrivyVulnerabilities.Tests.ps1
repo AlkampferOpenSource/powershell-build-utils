@@ -128,6 +128,24 @@ Describe 'ConvertFrom-TrivyReport' {
         $entries.Count | Should -Be 0
     }
 
+    It 'Says so instead of quietly returning nothing when the report cannot be read' {
+        # A locked report used to leave $report null, fall through the Results check and return
+        # an empty array with no warning: every finding in it gone, and nothing to say why.
+        @{ Results = @(@{ Type = 'nuget'; Vulnerabilities = @(
+            @{ PkgName = 'A'; InstalledVersion = '1.0.0'; VulnerabilityID = 'CVE-2024-1111'; Severity = 'HIGH' }) }) } |
+            ConvertTo-Json -Depth 10 | Set-Content -Path $script:reportPath -Encoding utf8
+
+        $handle = [System.IO.File]::Open($script:reportPath, 'Open', 'ReadWrite', 'None')
+        try {
+            $entries = ConvertFrom-TrivyReport -TrivyReportPath $script:reportPath -Ecosystem 'nuget' `
+                -WarningVariable readWarning -WarningAction SilentlyContinue
+        }
+        finally { $handle.Close() }
+
+        $entries.Count | Should -Be 0
+        "$readWarning" | Should -BeLike '*Failed to read Trivy report*'
+    }
+
     It 'Returns something -NewEntries can actually bind on every failure path' {
         $target = Join-Path $TestDrive 'bind-check.json'
         Set-Content -Path $target -Value '[]' -Encoding utf8
@@ -483,6 +501,38 @@ Describe 'ConvertTo-VulnerabilitiesSourceJson' {
 
         # "info" has no schema equivalent, and the second has no usable identifier.
         $entries.Count | Should -Be 0
+    }
+}
+
+Describe 'Write-FileHashReport' {
+
+    It 'Fails rather than publishing a report with blank hashes' {
+        # Get-FileHash and Get-Item are non-terminating by default, and a null result did not stop
+        # the function: it wrote a report carrying a real path and size next to empty SHA256, SHA1
+        # and MD5 lines. That reads as a genuine integrity report while attesting to nothing.
+        $target = Join-Path $TestDrive 'locked-payload.json'
+        Set-Content -Path $target -Value '{"a":1}' -Encoding utf8
+
+        $handle = [System.IO.File]::Open($target, 'Open', 'ReadWrite', 'None')
+        try {
+            { Write-FileHashReport -FilePath $target } | Should -Throw
+        }
+        finally { $handle.Close() }
+
+        Test-Path "$target.hash.txt" | Should -BeFalse
+    }
+
+    It 'Records hashes that match the file it was pointed at' {
+        $target = Join-Path $TestDrive 'payload.json'
+        Set-Content -Path $target -Value '{"a":1}' -Encoding utf8
+
+        Write-FileHashReport -FilePath $target
+
+        $lines = Get-Content "$target.hash.txt"
+        ($lines | Where-Object { $_.StartsWith('SHA256:') }).Substring(7).Trim() |
+            Should -Be (Get-FileHash $target -Algorithm SHA256).Hash
+        [int](($lines | Where-Object { $_.StartsWith('Size:') }).Substring(5).Trim().Split(' ')[0]) |
+            Should -Be (Get-Item $target).Length
     }
 }
 

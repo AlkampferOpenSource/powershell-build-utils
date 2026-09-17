@@ -67,10 +67,14 @@ function ConvertFrom-TrivyReport {
     }
 
     try {
-        $report = Get-Content -Path $TrivyReportPath -Raw | ConvertFrom-Json
+        # -ErrorAction Stop on both: an unreadable or locked report is a *non-terminating* error,
+        # so without it $report stays null, the Results check below finds nothing, and every
+        # finding in that report is dropped without even a warning to say why.
+        $raw = Get-Content -Path $TrivyReportPath -Raw -ErrorAction Stop
+        $report = $raw | ConvertFrom-Json -ErrorAction Stop
     }
     catch {
-        Write-Warning "Failed to parse Trivy report at ${TrivyReportPath}: $_"
+        Write-Warning "Failed to read Trivy report at ${TrivyReportPath}: $($_.Exception.Message)"
         return ,@()
     }
 
@@ -289,7 +293,9 @@ function Merge-VulnerabilitiesSourceEntries {
     }
 
     $json = ConvertTo-Json -InputObject $merged.ToArray() -Depth 10
-    $json | Out-File -FilePath $ExistingFilePath -Encoding UTF8 -Force
+    # Without -ErrorAction Stop a failed write is non-terminating, and we would go on to refresh
+    # the hash report and return Added/Total for a merge that never reached disk.
+    $json | Out-File -FilePath $ExistingFilePath -Encoding UTF8 -Force -ErrorAction Stop
 
     # ConvertTo-VulnerabilitiesSourceJson drops a .hash.txt next to the file it writes. We have
     # just rewritten that file, so without this the recorded SHA256/SHA1/MD5 and size describe
