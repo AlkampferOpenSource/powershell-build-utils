@@ -145,27 +145,27 @@ function ConvertFrom-TrivyReport {
 function Get-VulnerabilityEntryKey {
     <#
     .SYNOPSIS
-    Build the dedup keys for a vulnerabilitiesSource entry (module-private helper).
+    Build the dedup key for a vulnerabilitiesSource entry (module-private helper).
 
     .DESCRIPTION
-    An entry is identified by package name (case-insensitive) plus advisory id, scoped by the
-    versions it applies to: an exact `packageVersion` (dotnet's resolvedVersion, Trivy's
-    InstalledVersion) pins one installed version, a `vulnerableVersionRange` (npm audit's range)
-    names a set of them, and an entry with neither is unscoped.
+    An entry is identified by package name (case-insensitive), advisory id, and the versions it
+    applies to: an exact `packageVersion` (dotnet's resolvedVersion, Trivy's InstalledVersion)
+    pins one installed version, a `vulnerableVersionRange` (npm audit's range) names a set of
+    them, and an entry with neither is unscoped. The prefix keeps the three kinds apart, so a
+    packageVersion of "1.2.3" and a vulnerableVersionRange of "1.2.3" are not the same key.
 
-    The scope goes into the key as raw text -- two entries are the same finding only when their
-    scopes are spelled identically. Nothing here interprets a range.
+    The scope goes in as raw text and nothing here interprets it: two entries are the same
+    finding only when their keys are spelled identically.
 
     .PARAMETER Entry
     An externalVulnerability entry, either an ordered hashtable we just built or a PSCustomObject
     read back from an existing JSON file.
 
     .OUTPUTS
-    Hashtable with Base ("name|id"), Full ("name|id|version-scope") and Kind ('exact', 'range' or
-    'none').
+    The key string, "name|id|version-scope".
     #>
     [CmdletBinding()]
-    [OutputType([hashtable])]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         $Entry
@@ -175,12 +175,12 @@ function Get-VulnerabilityEntryKey {
     $base = "$name|$($Entry.id)"
 
     if ($Entry.packageVersion) {
-        return @{ Base = $base; Full = "$base|v=$([string]$Entry.packageVersion)"; Kind = 'exact' }
+        return "$base|v=$([string]$Entry.packageVersion)"
     }
     if ($Entry.vulnerableVersionRange) {
-        return @{ Base = $base; Full = "$base|r=$([string]$Entry.vulnerableVersionRange)"; Kind = 'range' }
+        return "$base|r=$([string]$Entry.vulnerableVersionRange)"
     }
-    return @{ Base = $base; Full = "$base|*"; Kind = 'none' }
+    return "$base|*"
 }
 
 function Merge-VulnerabilitiesSourceEntries {
@@ -193,18 +193,20 @@ function Merge-VulnerabilitiesSourceEntries {
     present in the existing file are left completely untouched -- the scan script's own finding
     wins on overlap; only genuinely new entries from -NewEntries are appended.
 
-    Two entries are the same finding only when their version scopes match as text. An exact
-    packageVersion therefore suppresses only that same version, so a report covering A@1.0.0 and
-    A@2.0.0 keeps one entry per version instead of collapsing to whichever came first. An entry
-    with no version at all is about the package as a whole, and does suppress any incoming
-    version of it.
+    Two entries are the same finding only when their keys match as text, and no entry is ever
+    treated as subsuming another. An exact packageVersion therefore suppresses only that same
+    version, so a report covering A@1.0.0 and A@2.0.0 keeps one entry per version instead of
+    collapsing to whichever came first.
 
-    An existing vulnerableVersionRange (npm audit's "<=4.17.20") is deliberately NOT matched
-    against an incoming exact packageVersion (Trivy's "4.17.20"), so where npm and Trivy overlap
-    the file ends up holding both entries. Deciding that overlap correctly means implementing npm
-    range semantics in full -- prerelease admission, partial operand expansion, X-ranges -- and a
-    subtly wrong answer silently discards a real vulnerability. A duplicate entry is noise a
-    reader can see and reconcile; a dropped finding leaves nothing behind at all.
+    Nothing here decides that one entry's versions contain another's, and that is the whole
+    design. An existing vulnerableVersionRange (npm audit's "<=4.17.20") is not matched against
+    an incoming exact packageVersion (Trivy's "4.17.20"), because judging it needs npm range
+    semantics in full -- prerelease admission, partial operand expansion, X-ranges. Neither is an
+    entry carrying no version at all treated as covering every version, because that reading of
+    the schema is an assumption, and if it is wrong the merge deletes a finding that was the only
+    record of a real vulnerability. Where two scanners overlap, the file simply holds both
+    entries: a duplicate is noise a reader can see and reconcile, a dropped finding leaves
+    nothing behind at all.
 
     Rewrites the file in place with the merged array and, when the file has a companion
     .hash.txt, regenerates it so the recorded hashes describe the merged content.
@@ -262,17 +264,12 @@ function Merge-VulnerabilitiesSourceEntries {
         Write-Verbose "No existing file at ${ExistingFilePath}; treating as empty"
     }
 
-    # Scoped keys ("name|id|version-scope") identify one specific finding, compared as text. The
-    # one entry that subsumes others is the unscoped one, which is about the package as a whole.
-    #
-    # A range is deliberately never matched against an incoming exact version: see .DESCRIPTION.
+    # One rule, no exceptions: an incoming entry is a duplicate only when its key already exists.
+    # No entry is treated as subsuming another, because every such rule rests on a claim about
+    # which installed versions the existing entry speaks for -- see .DESCRIPTION.
     $seenKeys = [System.Collections.Generic.HashSet[string]]::new()
-    $unscopedKeys = [System.Collections.Generic.HashSet[string]]::new()
-
     foreach ($item in $existing) {
-        $itemKey = Get-VulnerabilityEntryKey -Entry $item
-        [void]$seenKeys.Add($itemKey.Full)
-        if ($itemKey.Kind -eq 'none') { [void]$unscopedKeys.Add($itemKey.Base) }
+        [void]$seenKeys.Add((Get-VulnerabilityEntryKey -Entry $item))
     }
 
     $merged = [System.Collections.ArrayList]::new()
@@ -282,13 +279,11 @@ function Merge-VulnerabilitiesSourceEntries {
     $skipped = 0
     foreach ($newEntry in $NewEntries) {
         $newKey = Get-VulnerabilityEntryKey -Entry $newEntry
-        if ($seenKeys.Contains($newKey.Full) -or $unscopedKeys.Contains($newKey.Base)) {
+        if (-not $seenKeys.Add($newKey)) {
             $skipped++
             continue
         }
 
-        [void]$seenKeys.Add($newKey.Full)
-        if ($newKey.Kind -eq 'none') { [void]$unscopedKeys.Add($newKey.Base) }
         [void]$merged.Add($newEntry)
         $added++
     }

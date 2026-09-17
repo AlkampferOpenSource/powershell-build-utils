@@ -292,14 +292,49 @@ Describe 'Merge-VulnerabilitiesSourceEntries' {
         $result.Skipped | Should -Be 1
     }
 
-    It 'Lets an unscoped existing entry suppress any version' {
-        # No packageVersion and no range means the entry is about the package as a whole.
+    It 'Does not let an unscoped entry suppress a scoped one either' {
+        # An entry with no packageVersion and no range looks like it covers the whole package,
+        # but that is a reading of a schema we cannot check, and acting on it deletes a finding
+        # if the reading is wrong. It also made the merge order-dependent: unscoped-then-exact
+        # collapsed while exact-then-unscoped did not.
         @(
             [ordered]@{ packageName = 'A'; id = 'CVE-2024-1111'; severity = 'HIGH' }
         ) | ConvertTo-Json -Depth 10 | Set-Content -Path $script:existingPath -Encoding utf8
 
         $result = Merge-VulnerabilitiesSourceEntries -ExistingFilePath $script:existingPath -NewEntries @(
-            [ordered]@{ packageName = 'A'; id = 'CVE-2024-1111'; severity = 'HIGH'; packageVersion = '9.9.9' }
+            [ordered]@{ packageName = 'A'; id = 'CVE-2024-1111'; severity = 'HIGH'; packageVersion = '9.9.9' },
+            [ordered]@{ packageName = 'A'; id = 'CVE-2024-1111'; severity = 'HIGH'; vulnerableVersionRange = '<2.0.0' }
+        )
+
+        $result.Added | Should -Be 2
+        $result.Skipped | Should -Be 0
+    }
+
+    It 'Merges the same pair to the same result whichever side is already on file' {
+        # Dedup is now pure key equality, so it cannot depend on which scanner wrote first.
+        $unscoped = [ordered]@{ packageName = 'A'; id = 'CVE-2024-1111'; severity = 'HIGH' }
+        $exact    = [ordered]@{ packageName = 'A'; id = 'CVE-2024-1111'; severity = 'HIGH'; packageVersion = '9.9.9' }
+
+        $forward = Join-Path $TestDrive 'forward.json'
+        @($unscoped) | ConvertTo-Json -Depth 10 | Set-Content -Path $forward -Encoding utf8
+        $forwardResult = Merge-VulnerabilitiesSourceEntries -ExistingFilePath $forward -NewEntries @($exact)
+
+        $reverse = Join-Path $TestDrive 'reverse.json'
+        @($exact) | ConvertTo-Json -Depth 10 | Set-Content -Path $reverse -Encoding utf8
+        $reverseResult = Merge-VulnerabilitiesSourceEntries -ExistingFilePath $reverse -NewEntries @($unscoped)
+
+        $forwardResult.Total | Should -Be $reverseResult.Total
+        $forwardResult.Added | Should -Be $reverseResult.Added
+        $forwardResult.Total | Should -Be 2
+    }
+
+    It 'Still collapses two identical unscoped entries' {
+        @(
+            [ordered]@{ packageName = 'A'; id = 'CVE-2024-1111'; severity = 'HIGH' }
+        ) | ConvertTo-Json -Depth 10 | Set-Content -Path $script:existingPath -Encoding utf8
+
+        $result = Merge-VulnerabilitiesSourceEntries -ExistingFilePath $script:existingPath -NewEntries @(
+            [ordered]@{ packageName = 'A'; id = 'CVE-2024-1111'; severity = 'LOW' }
         )
 
         $result.Added | Should -Be 0
