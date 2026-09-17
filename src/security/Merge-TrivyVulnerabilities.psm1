@@ -57,9 +57,13 @@ function ConvertFrom-TrivyReport {
         [string] $Ecosystem
     )
 
+    # The leading comma matters on every return path, not just the happy one: a bare `return @()`
+    # is unrolled by the pipeline to *nothing*, so the caller's variable ends up $null and binding
+    # it to Merge-VulnerabilitiesSourceEntries -NewEntries fails (AllowEmptyCollection permits an
+    # empty array, not $null).
     if (-not (Test-Path $TrivyReportPath)) {
         Write-Warning "Trivy report not found at: $TrivyReportPath"
-        return @()
+        return ,@()
     }
 
     try {
@@ -67,7 +71,7 @@ function ConvertFrom-TrivyReport {
     }
     catch {
         Write-Warning "Failed to parse Trivy report at ${TrivyReportPath}: $_"
-        return @()
+        return ,@()
     }
 
     $entries = @()
@@ -138,16 +142,75 @@ function ConvertFrom-TrivyReport {
     return ,$entries
 }
 
+function Get-VulnerabilityEntryKey {
+    <#
+    .SYNOPSIS
+    Build the dedup keys for a vulnerabilitiesSource entry (module-private helper).
+
+    .DESCRIPTION
+    An entry is identified by package name (case-insensitive) plus advisory id, scoped by the
+    versions it applies to: an exact `packageVersion` (dotnet's resolvedVersion, Trivy's
+    InstalledVersion) pins one installed version, a `vulnerableVersionRange` (npm audit's range)
+    names a set of them, and an entry with neither is unscoped.
+
+    The scope goes into the key as raw text -- two entries are the same finding only when their
+    scopes are spelled identically. Nothing here interprets a range.
+
+    .PARAMETER Entry
+    An externalVulnerability entry, either an ordered hashtable we just built or a PSCustomObject
+    read back from an existing JSON file.
+
+    .OUTPUTS
+    Hashtable with Base ("name|id"), Full ("name|id|version-scope") and Kind ('exact', 'range' or
+    'none').
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        $Entry
+    )
+
+    $name = if ($null -ne $Entry.packageName) { ([string]$Entry.packageName).ToLowerInvariant() } else { '' }
+    $base = "$name|$($Entry.id)"
+
+    if ($Entry.packageVersion) {
+        return @{ Base = $base; Full = "$base|v=$([string]$Entry.packageVersion)"; Kind = 'exact' }
+    }
+    if ($Entry.vulnerableVersionRange) {
+        return @{ Base = $base; Full = "$base|r=$([string]$Entry.vulnerableVersionRange)"; Kind = 'range' }
+    }
+    return @{ Base = $base; Full = "$base|*"; Kind = 'none' }
+}
+
 function Merge-VulnerabilitiesSourceEntries {
     <#
     .SYNOPSIS
     Merge extra externalVulnerability entries into an existing vulnerabilitiesSource file.
 
     .DESCRIPTION
-    Dedupes by (packageName, id), case-insensitive on packageName. Entries already present in
-    the existing file are left completely untouched -- the scan script's own finding wins on
-    overlap; only genuinely new entries from -NewEntries are appended. Rewrites the file in
-    place with the merged array.
+    Dedupes by (packageName, id, version scope), case-insensitive on packageName. Entries already
+    present in the existing file are left completely untouched -- the scan script's own finding
+    wins on overlap; only genuinely new entries from -NewEntries are appended.
+
+    Two entries are the same finding only when their version scopes match as text. An exact
+    packageVersion therefore suppresses only that same version, so a report covering A@1.0.0 and
+    A@2.0.0 keeps one entry per version instead of collapsing to whichever came first. An entry
+    with no version at all is about the package as a whole, and does suppress any incoming
+    version of it.
+
+    An existing vulnerableVersionRange (npm audit's "<=4.17.20") is deliberately NOT matched
+    against an incoming exact packageVersion (Trivy's "4.17.20"), so where npm and Trivy overlap
+    the file ends up holding both entries. Deciding that overlap correctly means implementing npm
+    range semantics in full -- prerelease admission, partial operand expansion, X-ranges -- and a
+    subtly wrong answer silently discards a real vulnerability. A duplicate entry is noise a
+    reader can see and reconcile; a dropped finding leaves nothing behind at all.
+
+    Rewrites the file in place with the merged array and, when the file has a companion
+    .hash.txt, regenerates it so the recorded hashes describe the merged content.
+
+    Throws without touching the file if existing data cannot be read or parsed: continuing would
+    overwrite the previous scan findings with just the new entries (or an empty array).
 
     .PARAMETER ExistingFilePath
     Path to an existing vulnerabilitiesSource JSON file (as written by
@@ -177,26 +240,39 @@ function Merge-VulnerabilitiesSourceEntries {
     $existing = @()
     if (Test-Path $ExistingFilePath) {
         try {
-            $raw = Get-Content -Path $ExistingFilePath -Raw
+            # -ErrorAction Stop is what makes the catch below reachable: a locked file or a
+            # denied ACL is a *non-terminating* error, so without it Get-Content just writes to
+            # the error stream, $raw stays $null, and we fall through to the overwrite.
+            $raw = Get-Content -Path $ExistingFilePath -Raw -ErrorAction Stop
             if (-not [string]::IsNullOrWhiteSpace($raw)) {
-                $parsed = $raw | ConvertFrom-Json
+                $parsed = $raw | ConvertFrom-Json -ErrorAction Stop
                 if ($parsed) {
                     $existing = @($parsed)
                 }
             }
         }
         catch {
-            Write-Warning "Failed to parse existing vulnerabilitiesSource file at ${ExistingFilePath}: $_"
+            # Swallowing this would leave $existing empty and rewrite the file with only the new
+            # entries -- or [] when there are none -- destroying the scan findings we were asked
+            # to merge into, while still reporting a successful merge.
+            throw "Failed to read existing vulnerabilitiesSource file at ${ExistingFilePath}: $($_.Exception.Message). Refusing to overwrite it."
         }
     }
     else {
         Write-Verbose "No existing file at ${ExistingFilePath}; treating as empty"
     }
 
-    $existingKeys = [System.Collections.Generic.HashSet[string]]::new()
+    # Scoped keys ("name|id|version-scope") identify one specific finding, compared as text. The
+    # one entry that subsumes others is the unscoped one, which is about the package as a whole.
+    #
+    # A range is deliberately never matched against an incoming exact version: see .DESCRIPTION.
+    $seenKeys = [System.Collections.Generic.HashSet[string]]::new()
+    $unscopedKeys = [System.Collections.Generic.HashSet[string]]::new()
+
     foreach ($item in $existing) {
-        $key = "$($item.packageName.ToLowerInvariant())|$($item.id)"
-        [void]$existingKeys.Add($key)
+        $itemKey = Get-VulnerabilityEntryKey -Entry $item
+        [void]$seenKeys.Add($itemKey.Full)
+        if ($itemKey.Kind -eq 'none') { [void]$unscopedKeys.Add($itemKey.Base) }
     }
 
     $merged = [System.Collections.ArrayList]::new()
@@ -205,18 +281,27 @@ function Merge-VulnerabilitiesSourceEntries {
     $added = 0
     $skipped = 0
     foreach ($newEntry in $NewEntries) {
-        $key = "$($newEntry.packageName.ToLowerInvariant())|$($newEntry.id)"
-        if ($existingKeys.Contains($key)) {
+        $newKey = Get-VulnerabilityEntryKey -Entry $newEntry
+        if ($seenKeys.Contains($newKey.Full) -or $unscopedKeys.Contains($newKey.Base)) {
             $skipped++
             continue
         }
-        [void]$existingKeys.Add($key)
+
+        [void]$seenKeys.Add($newKey.Full)
+        if ($newKey.Kind -eq 'none') { [void]$unscopedKeys.Add($newKey.Base) }
         [void]$merged.Add($newEntry)
         $added++
     }
 
     $json = ConvertTo-Json -InputObject $merged.ToArray() -Depth 10
     $json | Out-File -FilePath $ExistingFilePath -Encoding UTF8 -Force
+
+    # ConvertTo-VulnerabilitiesSourceJson drops a .hash.txt next to the file it writes. We have
+    # just rewritten that file, so without this the recorded SHA256/SHA1/MD5 and size describe
+    # the pre-merge revision and the supplied integrity report is simply wrong.
+    if (Test-Path "$ExistingFilePath.hash.txt") {
+        Write-FileHashReport -FilePath $ExistingFilePath
+    }
 
     return @{
         Added   = $added
